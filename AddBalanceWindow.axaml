@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MySubs.AddBalanceWindow"
+        Title="Пополнить баланс💵"
+        Width="350" Height="320"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <StackPanel Margin="20" Spacing="15">
+        <TextBlock Text="Пополнение баланса." 
+                   FontSize="20" 
+                   FontWeight="Bold" 
+                   Foreground="#FF87CEFA"/>
+
+        <StackPanel Spacing="5">
+            <TextBlock Text="Сумма пополнения"/>
+            <TextBox Name="SummInput" Watermark="0.00"/>
+        </StackPanel>
+
+        <StackPanel Spacing="5">
+            <TextBlock Text="Способ оплаты:"/>
+            <TextBox Name="PayInput" Watermark="Например,картой"/>
+        </StackPanel>
+
+        <StackPanel Spacing="5">
+            <TextBlock Text="Валюта в которой производится оплата🛒"/>
+            <TextBox Name="ValuteInput" Watermark="Доллар,евро или рубль."/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,10,0,0">
+            <Button Name="CancelButton" Content="Отмена" Background="Gray" Foreground="White"/>
+            <Button Name="SaveButton" Content="Сохранить" Background="Blue" Foreground="White"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
