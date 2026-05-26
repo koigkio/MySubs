@@ -1,7 +1,9 @@
-using Avalonia;
+using System;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Microsoft.Data.Sqlite;
 
 namespace MySubs;
 
@@ -10,40 +12,47 @@ public partial class AddBalanceWindow : Window
     public AddBalanceWindow()
     {
         InitializeComponent();
+        var save = this.FindControl<Button>("SaveButton");
+        var cancel = this.FindControl<Button>("CancelButton");
+        if (save != null) save.Click += Save_Click;
+        if (cancel != null) cancel.Click += (s, e) => Close();
+    }
+    
+    private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
+    
+    private async void Save_Click(object? sender, RoutedEventArgs e)
+    {
+        var amountText = this.FindControl<TextBox>("AmountInput")?.Text ?? "0";
+        var paymentMethod = this.FindControl<ComboBox>("PaymentMethodInput")?.SelectedItem?.ToString() ?? "Не указан";
+        var description = this.FindControl<TextBox>("DescriptionInput")?.Text ?? "Пополнение баланса";
         
-        var saveButton = this.FindControl<Button>("SaveButton");
-        var cancelButton = this.FindControl<Button>("CancelButton");
-
-        if (saveButton != null) saveButton.Click += SaveButton_Click;
-        if (cancelButton != null) cancelButton.Click += CancelButton_Click;
-    }
-
-    private void InitializeComponent()
-    {
-        AvaloniaXamlLoader.Load(this);
-    }
-
-    private void SaveButton_Click(object? sender, RoutedEventArgs e)
-    {
-        var summInput = this.FindControl<TextBox>("SummInput");
-        var payInput = this.FindControl<TextBox>("PayInput");
-        var valuteInput = this.FindControl<TextBox>("ValuteInput");
-
-        string summ = SummInput?.Text ?? "";
-        string payText = PayInput?.Text ?? "";
-        string valute = ValuteInput?.Text ?? "";
-
-        if (decimal.TryParse(payText, out decimal pay))
+        if (!decimal.TryParse(amountText, out decimal amount) || amount <= 0)
         {
-            System.Diagnostics.Debug.WriteLine($"Сумма пополнения: {summ}, Способ оплаты: {pay}, Валюта: {valute}");
+            await ShowMessage("Ошибка", "Введите сумму больше 0");
+            return;
         }
-         
-
-        Close(); 
+        
+        using var connection = new SqliteConnection("Data Source=mysubs.db");
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        
+        new SqliteCommand($"UPDATE Settings SET Value = CAST(Value AS REAL) + {amount} WHERE Key='CurrentBalance'", connection, transaction).ExecuteNonQuery();
+        new SqliteCommand($"INSERT INTO Balance (Amount, OperationType, Description) VALUES ({amount}, 'deposit', '{description} ({paymentMethod})')", connection, transaction).ExecuteNonQuery();
+        
+        transaction.Commit();
+        await ShowMessage("Успех", $"Баланс пополнен на {amount} ₽");
+        Close();
     }
-
-    private void CancelButton_Click(object? sender, RoutedEventArgs e)
+    
+    private async Task ShowMessage(string title, string msg)
     {
-        Close(); 
+        var dlg = new Window { Title = title, Width = 300, Height = 120 };
+        var stack = new StackPanel();
+        stack.Children.Add(new TextBlock { Text = msg });
+        var ok = new Button { Content = "OK" };
+        ok.Click += (_, _) => dlg.Close();
+        stack.Children.Add(ok);
+        dlg.Content = stack;
+        await dlg.ShowDialog(this);
     }
 }

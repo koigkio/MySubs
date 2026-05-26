@@ -2,12 +2,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"    
         x:Class="MySubs.MainWindow"
-        Title="MySubs">
-  <Grid ColumnDefinitions="200,*">   
+        Title="MySubs"
+        WindowStartupLocation="CenterScreen">
         
-        <!-- ЛЕВАЯ ПАНЕЛЬ -->
+    <Grid ColumnDefinitions="200,*">   
+        
         <StackPanel Grid.Column="0" Margin="20">
             <TextBlock Text="MySubs"
                        FontSize="32"
@@ -15,27 +16,24 @@
                        Foreground="#FF87CEFA"
                        Margin="0,0,0,20" />
  
-            <Button Content="+ Добавить подписку" 
+            <Button Name="AddSubscriptionButton"
+                    Content="+ Добавить подписку" 
                     Width="170"
                     Foreground="White"
                     Background="Blue"
                     HorizontalAlignment="Stretch"
-                    Margin="0,0,0,10"
-                    Click="AddButton_Click"/> 
+                    Margin="0,0,0,10"/> 
 
-         <Button Content="Пополнить баланс💸" 
+            <Button Name="AddBalanceButton"
+                    Content="Пополнить баланс💸" 
                     Width="170"
                     Foreground="Black"
                     HorizontalAlignment="Stretch"
-                    Margin="0,0,0,10"
-                    Click="AddButton1_Click"/> 
-
+                    Margin="0,0,0,10"/> 
         </StackPanel>
         
-        <!-- ПРАВАЯ ПАНЕЛЬ -->
         <StackPanel Grid.Column="1" Margin="20">
             
-            <!-- Шапка: Заголовок слева, Баланс справа -->
             <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,20">
                 <TextBlock Grid.Column="0"
                            Text="Управление Подписками"
@@ -46,16 +44,29 @@
                         Background="#FFF0F8FF"
                         Padding="10,5"
                         CornerRadius="5">
-                    <TextBlock Text="Баланс: 0 ₽" 
+                    <TextBlock Name="TxtCurrentBalance"
+                               Text="Баланс: 0 ₽" 
                                Foreground="Black"
                                FontWeight="Medium" />
                 </Border>
             </Grid>
             
-            <!-- Поиск (Watermark заменен на корректный PlaceholderText) -->
-            <TextBox PlaceholderText="🔎 Искать подписку..."
+            <TextBox Name="SearchBox"
+                     PlaceholderText="🔎 Искать подписку..."
                      Margin="0,0,0,20" />
-            
+
+            <ListBox Name="ListSubs" Height="300">
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="✏️ Редактировать" Name="EditMenuItem"/>
+                        <MenuItem Header="🔄 Продлить" Name="RenewMenuItem"/>
+                        <MenuItem Header="⏸ Отменить (30 минут)" Name="CancelMenuItem"/>
+                        <MenuItem Header="💰 Оплатить сейчас" Name="PayNowMenuItem"/>
+                        <Separator/>
+                        <MenuItem Header="❌ Удалить навсегда" Name="DeleteMenuItem"/>
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+            </ListBox>
         </StackPanel>
     </Grid>
 </Window>
