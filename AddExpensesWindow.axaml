@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MySubs.AddExpensesWindow"
+        Title="Все расходы на подписки💵"
+        Width="500" Height="450"
+        CanResize="True"
+        WindowStartupLocation="CenterOwner">
+
+    <StackPanel Margin="20" Spacing="15">
+        <TextBlock Text="Все расходы на подписки💵" 
+                   FontSize="20" 
+                   FontWeight="Bold" 
+                   Foreground="#FF87CEFA"
+                   HorizontalAlignment="Center"/>
+
+        <!-- Добавляем блок с общей суммой -->
+        <Border Background="#FFEBEE" Padding="10,5" CornerRadius="8">
+            <TextBlock Name="TxtTotalExpenses" 
+                       Text="💰 Всего потрачено: 0 ₽" 
+                       FontSize="14" 
+                       FontWeight="Bold" 
+                       Foreground="#E74C3C" 
+                       HorizontalAlignment="Center"/>
+        </Border>
+        
+        <!-- Список расходов (как у вас) -->
+        <ListBox Name="ListExpenses" 
+                 Height="300"
+                 Background="White"
+                 BorderThickness="1"
+                 BorderBrush="#E0E0E0"/>
+        
+        <!-- Кнопки -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button Name="CloseButton" Content="Закрыть" Background="Gray" Foreground="White"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

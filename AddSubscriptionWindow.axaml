@@ -1,53 +1,36 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="MySubs.AddSubscriptionWindow"
-        Title="Добавить подписку💼"
-        Width="400" Height="480"
+        Title="Добавить новую подписку"
+        Width="350" Height="320"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
-    
-    <ScrollViewer>
-        <StackPanel Margin="15">
-            
-            <TextBlock Text="Добавление подписки"
-                       FontSize="20" 
-                       FontWeight="Bold" 
-                       Foreground="#FF87CEFA"
-                       Margin="0,0,0,15"/>
-            
-            <TextBlock Text="Название:" Margin="0,5,0,3"/>
-            <TextBox Name="TitleInput" PlaceholderText="Netflix, Spotify"/>
-            
-            <TextBlock Text="Цена:" Margin="0,10,0,3"/>
-            <TextBox Name="PriceInput" PlaceholderText="0.00"/>
-            
-            <TextBlock Text="Способ оплаты:" Margin="0,10,0,3"/>
-            <ComboBox Name="PayMethodInput" SelectedIndex="0">
-                <ComboBoxItem Tag="card">💳 Банковская карта</ComboBoxItem>
-                <ComboBoxItem Tag="crypto">₿ Криптовалюта</ComboBoxItem>
-                <ComboBoxItem Tag="foreign_card">🌍 Иностранная карта</ComboBoxItem>
-            </ComboBox>
-            
-            <TextBlock Text="Валюта:" Margin="0,10,0,3"/>
-            <ComboBox Name="CurrencyInput" SelectedIndex="0">
-                <ComboBoxItem>₽ (Рубль)</ComboBoxItem>
-                <ComboBoxItem>$ (Доллар)</ComboBoxItem>
-                <ComboBoxItem>€ (Евро)</ComboBoxItem>
-            </ComboBox>
-            
-            <TextBlock Text="Описание:" Margin="0,10,0,3"/>
-            <TextBox Name="DescriptionInput" TextWrapping="Wrap" Height="60" PlaceholderText="Необязательно"/>
-            
-            <CheckBox Name="AutoRenewCheck" Content="🔄 Автоматическое продление" IsChecked="True" Margin="0,10,0,0"/>
-            
-            <StackPanel Orientation="Horizontal" 
-                        HorizontalAlignment="Right" 
-                        Spacing="10" 
-                        Margin="0,20,0,0">
-                <Button Name="CancelButton" Content="Отмена" Background="Gray" Foreground="White" Width="80"/>
-                <Button Name="SaveButton" Content="Сохранить" Background="Blue" Foreground="White" Width="80"/>
-            </StackPanel>
-            
+
+    <StackPanel Margin="20" Spacing="15">
+        <TextBlock Text="Новая подписка" 
+                   FontSize="20" 
+                   FontWeight="Bold" 
+                   Foreground="#FF87CEFA"/>
+
+        <StackPanel Spacing="5">
+            <TextBlock Text="Название подписки:"/>
+            <TextBox Name="NameInput" Watermark="Например, Яндекс Плюс"/>
         </StackPanel>
-    </ScrollViewer>
+
+    
+        <StackPanel Spacing="5">
+            <TextBlock Text="Стоимость (руб):"/>
+            <TextBox Name="PriceInput" Watermark="0.00"/>
+        </StackPanel>
+
+        <StackPanel Spacing="5">
+            <TextBlock Text="Срок действия:"/>
+            <TextBox Name="TermInput" Watermark="30 дней или 1 месяц"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,10,0,0">
+            <Button Name="CancelButton" Content="Отмена" Background="Gray" Foreground="White"/>
+            <Button Name="SaveButton" Content="Сохранить" Background="Blue" Foreground="White"/>
+        </StackPanel>
+    </StackPanel>
 </Window>

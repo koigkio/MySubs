@@ -1,72 +1,30 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"    
         x:Class="MySubs.MainWindow"
-        Title="MySubs"
+        Title="MySubs" Width="1840" Height="920"
         WindowStartupLocation="CenterScreen">
-        
+    
     <Grid ColumnDefinitions="200,*">   
-        
         <StackPanel Grid.Column="0" Margin="20">
-            <TextBlock Text="MySubs"
-                       FontSize="32"
-                       FontWeight="Bold"
-                       Foreground="#FF87CEFA"
-                       Margin="0,0,0,20" />
- 
-            <Button Name="AddSubscriptionButton"
-                    Content="+ Добавить подписку" 
-                    Width="170"
-                    Foreground="White"
-                    Background="Blue"
-                    HorizontalAlignment="Stretch"
-                    Margin="0,0,0,10"/> 
-
-            <Button Name="AddBalanceButton"
-                    Content="Пополнить баланс💸" 
-                    Width="170"
-                    Foreground="Black"
-                    HorizontalAlignment="Stretch"
-                    Margin="0,0,0,10"/> 
+            <TextBlock Text="MySubs" FontSize="32" FontWeight="Bold" Foreground="#FF87CEFA" Margin="0,0,0,20"/>
+            <Button Name="AddSubscriptionButton" Content="+ Добавить подписку" Width="170" Foreground="White" Background="Blue" Margin="0,0,0,10"/>
+            <Button Name="AddBalanceButton" Content="Пополнить баланс💸" Width="170" Foreground="White" Background="DarkGreen" Margin="0,0,0,10"/>
+            <Button Name="ShowExpensesButton" Content="📊 Все расходы" Width="170" Foreground="White" Background="Orange" Margin="0,0,0,10"/>
         </StackPanel>
         
         <StackPanel Grid.Column="1" Margin="20">
-            
             <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,20">
-                <TextBlock Grid.Column="0"
-                           Text="Управление Подписками"
-                           FontSize="24"
-                           FontWeight="Bold" />  
-
-                <Border Grid.Column="1"
-                        Background="#FFF0F8FF"
-                        Padding="10,5"
-                        CornerRadius="5">
-                    <TextBlock Name="TxtCurrentBalance"
-                               Text="Баланс: 0 ₽" 
-                               Foreground="Black"
-                               FontWeight="Medium" />
+                <TextBlock Text="Управление Подписками" FontSize="24" FontWeight="Bold"/>
+                <Border Grid.Column="1" Background="#FFF0F8FF" Padding="10,5" CornerRadius="5">
+                    <TextBlock Name="TxtCurrentBalance" Text="Баланс: 0 ₽"/>
                 </Border>
             </Grid>
             
-            <TextBox Name="SearchBox"
-                     PlaceholderText="🔎 Искать подписку..."
-                     Margin="0,0,0,20" />
-
-            <ListBox Name="ListSubs" Height="300">
-                <ListBox.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="✏️ Редактировать" Name="EditMenuItem"/>
-                        <MenuItem Header="🔄 Продлить" Name="RenewMenuItem"/>
-                        <MenuItem Header="⏸ Отменить (30 минут)" Name="CancelMenuItem"/>
-                        <MenuItem Header="💰 Оплатить сейчас" Name="PayNowMenuItem"/>
-                        <Separator/>
-                        <MenuItem Header="❌ Удалить навсегда" Name="DeleteMenuItem"/>
-                    </ContextMenu>
-                </ListBox.ContextMenu>
-            </ListBox>
+            <TextBox Name="SearchBox" PlaceholderText="🔎 Искать подписку..." Margin="0,0,0,20"/>
+            
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Name="SubscriptionsPanel" />
+            </ScrollViewer>
         </StackPanel>
     </Grid>
 </Window>

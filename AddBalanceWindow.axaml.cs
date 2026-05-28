@@ -1,58 +1,119 @@
-using System;
-using System.Threading.Tasks;
-using Avalonia.Controls;
-using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
-using Microsoft.Data.Sqlite;
+using Avalonia;                    // Подключает основные классы Avalonia (Window, Application)
+using Avalonia.Controls;           // Подключает элементы управления (Button, TextBox, Window)
+using Avalonia.Interactivity;      // Подключает события (RoutedEventArgs для кликов)
+using Avalonia.Markup.Xaml;        // Подключает загрузчик XAML разметки
 
-namespace MySubs;
+namespace MySubs;                  // Пространство имен (такое же как у других окон)
 
+// Объявляет частичный класс окна пополнения баланса
 public partial class AddBalanceWindow : Window
 {
-    public AddBalanceWindow()
-    {
-        InitializeComponent();
-        var save = this.FindControl<Button>("SaveButton");
-        var cancel = this.FindControl<Button>("CancelButton");
-        if (save != null) save.Click += Save_Click;
-        if (cancel != null) cancel.Click += (s, e) => Close();
-    }
+    // Поле для хранения ссылки на главное окно
+    private MainWindow _mainWindow;
     
-    private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
+    // Поле для хранения последнего способа оплаты (чтобы запомнить)
+    private string _lastPaymentMethod = "";
     
-    private async void Save_Click(object? sender, RoutedEventArgs e)
+    // Поле для хранения последней валюты (чтобы запомнить)
+    private string _lastCurrency = "";
+    
+    // Конструктор - вызывается при создании окна
+    public AddBalanceWindow(MainWindow mainWindow)
     {
-        var amountText = this.FindControl<TextBox>("AmountInput")?.Text ?? "0";
-        var paymentMethod = this.FindControl<ComboBox>("PaymentMethodInput")?.SelectedItem?.ToString() ?? "Не указан";
-        var description = this.FindControl<TextBox>("DescriptionInput")?.Text ?? "Пополнение баланса";
+        InitializeComponent();     // Загружает XAML разметку
         
-        if (!decimal.TryParse(amountText, out decimal amount) || amount <= 0)
+        _mainWindow = mainWindow;  // Сохраняет ссылку на главное окно
+        
+        // Находит кнопку "Сохранить" на форме
+        var saveButton = this.FindControl<Button>("SaveButton");
+        
+        // Находит кнопку "Отмена" на форме
+        var cancelButton = this.FindControl<Button>("CancelButton");
+
+        // Если кнопка сохранения найдена - подписывается на клик
+        if (saveButton != null) saveButton.Click += SaveButton_Click;
+        
+        // Если кнопка отмены найдена - подписывается на клик
+        if (cancelButton != null) cancelButton.Click += CancelButton_Click;
+    }
+
+    // Загружает XAML разметку из файла .axaml
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
+    }
+
+    // Обработчик нажатия кнопки "Сохранить"
+    private void SaveButton_Click(object? sender, RoutedEventArgs e)
+    {
+        // Находит поле для ввода суммы
+        var summInput = this.FindControl<TextBox>("SummInput");
+        
+        // Находит поле для ввода способа оплаты
+        var payInput = this.FindControl<TextBox>("PayInput");
+        
+        // Находит поле для ввода валюты
+        var valuteInput = this.FindControl<TextBox>("ValuteInput");
+
+        // Получает текст из поля суммы (если поле пустое - пустая строка)
+        string summ = summInput?.Text ?? "";
+        
+        // Получает текст из поля способа оплаты
+        string payText = payInput?.Text ?? "";
+        
+        // Получает текст из поля валюты
+        string valute = valuteInput?.Text ?? "";
+
+        // Пытается преобразовать строку суммы в число
+        // decimal.TryParse - пробует превратить "500" в 500 (тип decimal)
+        // out decimal amount - сюда запишется результат
+        if (decimal.TryParse(summ, out decimal amount))
         {
-            await ShowMessage("Ошибка", "Введите сумму больше 0");
-            return;
+            // ЕСЛИ СУММА ВВЕДЕНА КОРРЕКТНО:
+            
+            // Сохраняет способ оплаты
+            // string.IsNullOrWhiteSpace(payText) - проверяет: пустой или только пробелы?
+            // ? "Не указано" : payText - если пусто - пишем "Не указано", иначе берем то что ввел пользователь
+            _lastPaymentMethod = string.IsNullOrWhiteSpace(payText) ? "Не указано" : payText;
+            
+            // Сохраняет валюту (если не ввели - ставим рубли)
+            _lastCurrency = string.IsNullOrWhiteSpace(valute) ? "₽" : valute;
+            
+            // Передает данные в главное окно
+            // amount - сумма пополнения
+            // _lastPaymentMethod - способ оплаты
+            // _lastCurrency - валюта
+            _mainWindow.AddBalanceWithDetails(amount, _lastPaymentMethod, _lastCurrency);
+            
+            Close();  // Закрывает окно пополнения
         }
-        
-        using var connection = new SqliteConnection("Data Source=mysubs.db");
-        connection.Open();
-        using var transaction = connection.BeginTransaction();
-        
-        new SqliteCommand($"UPDATE Settings SET Value = CAST(Value AS REAL) + {amount} WHERE Key='CurrentBalance'", connection, transaction).ExecuteNonQuery();
-        new SqliteCommand($"INSERT INTO Balance (Amount, OperationType, Description) VALUES ({amount}, 'deposit', '{description} ({paymentMethod})')", connection, transaction).ExecuteNonQuery();
-        
-        transaction.Commit();
-        await ShowMessage("Успех", $"Баланс пополнен на {amount} ₽");
-        Close();
+        else
+        {
+            // ЕСЛИ СУММА ВВЕДЕНА НЕКОРРЕКТНО (не число или пусто):
+            
+            // Создает окно с ошибкой
+            var errorDialog = new Window
+            {
+                Title = "Ошибка",              // Заголовок окна
+                Width = 250,                   // Ширина 250px
+                Height = 100,                  // Высота 100px
+                Content = new TextBlock        // Содержимое - текст
+                { 
+                    Text = "Введите корректную сумму!",  // Текст ошибки
+                    Margin = new Avalonia.Thickness(20)   // Отступы 20px
+                }
+            };
+            
+            // Показывает окно с ошибкой
+            errorDialog.ShowDialog(this);
+            
+            // Окно пополнения НЕ закрывается, пользователь может исправить ошибку
+        }
     }
-    
-    private async Task ShowMessage(string title, string msg)
+
+    // Обработчик нажатия кнопки "Отмена"
+    private void CancelButton_Click(object? sender, RoutedEventArgs e)
     {
-        var dlg = new Window { Title = title, Width = 300, Height = 120 };
-        var stack = new StackPanel();
-        stack.Children.Add(new TextBlock { Text = msg });
-        var ok = new Button { Content = "OK" };
-        ok.Click += (_, _) => dlg.Close();
-        stack.Children.Add(ok);
-        dlg.Content = stack;
-        await dlg.ShowDialog(this);
+        Close();  // Просто закрывает окно без сохранения
     }
 }

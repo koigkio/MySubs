@@ -1,88 +1,166 @@
-using System;
-using System.Threading.Tasks;
-using Avalonia.Controls;
-using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
-using Microsoft.Data.Sqlite;
+using Avalonia;                    // Подключает основные классы Avalonia (Window, Application и т.д.)
+using Avalonia.Controls;           // Подключает элементы управления (Button, TextBox, Window)
+using Avalonia.Interactivity;      // Подключает события (RoutedEventArgs для кликов)
+using Avalonia.Markup.Xaml;        // Подключает загрузчик XAML разметки
 
-namespace MySubs;
+namespace MySubs;                  // Объявляет пространство имен (такое же как у MainWindow)
 
+// Объявляет частичный класс окна добавления подписки
+// public - доступен из любого места
+// partial - часть класса, вторая часть в .axaml файле
+// : Window - наследуется от класса Window (это окно)
 public partial class AddSubscriptionWindow : Window
 {
-    private SubscriptionItem? _editSub;
+    // Поле для хранения ссылки на главное окно
+    // private - доступно только внутри этого класса
+    // MainWindow - тип данных (главное окно)
+    // _mainWindow - имя поля (с подчеркиванием в начале - стандарт C#)
+    private MainWindow _mainWindow;
     
-    public AddSubscriptionWindow() { InitializeComponent(); SetupEvents(); }
-    public AddSubscriptionWindow(SubscriptionItem subscription) { InitializeComponent(); _editSub = subscription; SetupEvents(); LoadData(); this.Title = "✏️ Редактирование"; }
-    
-    private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
-    
-    private void SetupEvents()
+    // Конструктор - вызывается при создании окна
+    // public - доступен из любого места
+    // AddSubscriptionWindow - имя конструктора совпадает с именем класса
+    // (MainWindow mainWindow) - принимает один параметр - главное окно
+    public AddSubscriptionWindow(MainWindow mainWindow)
     {
-        var save = this.FindControl<Button>("SaveButton");
-        var cancel = this.FindControl<Button>("CancelButton");
-        if (save != null) save.Click += Save_Click;
-        if (cancel != null) cancel.Click += (s, e) => Close();
+        InitializeComponent();     // Загружает XAML разметку (кнопки, поля из .axaml файла)
+        
+        _mainWindow = mainWindow;  // Сохраняет ссылку на главное окно в поле _mainWindow
+        
+        // Ищет на форме кнопку с именем "SaveButton"
+        // this - текущее окно
+        // FindControl<Button> - ищет элемент управления типа Button
+        // ("SaveButton") - имя элемента в XAML
+        var saveButton = this.FindControl<Button>("SaveButton");
+        
+        // Ищет кнопку "CancelButton"
+        var cancelButton = this.FindControl<Button>("CancelButton");
+
+        // Если кнопка сохранения найдена (не равна null)
+        if (saveButton != null) 
+            // Подписывается на событие Click (нажатие кнопки)
+            // += - добавить обработчик
+            // SaveButton_Click - имя метода, который вызовется при клике
+            saveButton.Click += SaveButton_Click;
+        
+        // Если кнопка отмены найдена
+        if (cancelButton != null) 
+            cancelButton.Click += CancelButton_Click;  // Подписывается на событие клика
     }
-    
-    private void LoadData()
+
+    // Метод загрузки XAML разметки
+    // private - только для внутреннего использования
+    // void - ничего не возвращает
+    private void InitializeComponent()
     {
-        if (_editSub == null) return;
-        this.FindControl<TextBox>("TitleInput")!.Text = _editSub.Title;
-        this.FindControl<TextBox>("PriceInput")!.Text = _editSub.Price.ToString();
-        this.FindControl<TextBox>("DescriptionInput")!.Text = _editSub.Description;
-        this.FindControl<CheckBox>("AutoRenewCheck")!.IsChecked = _editSub.AutoRenew;
-        var currencyBox = this.FindControl<ComboBox>("CurrencyInput");
-        if (currencyBox != null) currencyBox.SelectedIndex = _editSub.Currency == "$" ? 1 : _editSub.Currency == "€" ? 2 : 0;
-        var payBox = this.FindControl<ComboBox>("PayMethodInput");
-        if (payBox != null) payBox.SelectedIndex = _editSub.PayMethod == "crypto" ? 1 : _editSub.PayMethod == "foreign_card" ? 2 : 0;
+        // Загружает XAML из файла .axaml с таким же именем
+        // AvaloniaXamlLoader - класс для загрузки XAML
+        // .Load(this) - загружает разметку в текущее окно (this)
+        AvaloniaXamlLoader.Load(this);
     }
-    
-    private async void Save_Click(object? sender, RoutedEventArgs e)
+
+    // Обработчик нажатия на кнопку "Сохранить"
+    // private - только внутри класса
+    // void - ничего не возвращает
+    // object? sender - отправитель (кнопка, на которую нажали)
+    // RoutedEventArgs e - аргументы события (дополнительная информация)
+    private void SaveButton_Click(object? sender, RoutedEventArgs e)
     {
-        try
+        // Ищет текстовое поле для ввода названия
+        // FindControl<TextBox> - ищет элемент типа TextBox
+        // ("NameInput") - имя элемента из XAML
+        var nameInput = this.FindControl<TextBox>("NameInput");
+        
+        // Ищет поле для ввода цены
+        var priceInput = this.FindControl<TextBox>("PriceInput");
+        
+        // Ищет поле для ввода срока
+        var termInput = this.FindControl<TextBox>("TermInput");
+
+        // Получает текст из поля названия
+        // nameInput?.Text - если nameInput не null, берет Text, иначе null
+        // ?? "" - если получили null, подставляет пустую строку
+        string name = nameInput?.Text ?? "";
+        
+        // Получает текст из поля цены
+        string priceText = priceInput?.Text ?? "";
+        
+        // Получает текст из поля срока
+        string term = termInput?.Text ?? "";
+
+        // Проверяет, что название не пустое
+        // string.IsNullOrWhiteSpace - проверяет: null, пусто, или только пробелы
+        if (string.IsNullOrWhiteSpace(name))
         {
-            var title = this.FindControl<TextBox>("TitleInput")?.Text ?? "";
-            var priceText = this.FindControl<TextBox>("PriceInput")?.Text ?? "0";
-            var description = this.FindControl<TextBox>("DescriptionInput")?.Text ?? "";
-            var autoRenew = this.FindControl<CheckBox>("AutoRenewCheck")?.IsChecked == true;
-            if (string.IsNullOrWhiteSpace(title)) { await ShowMessage("Ошибка", "Введите название"); return; }
-            if (!double.TryParse(priceText, out double price)) { await ShowMessage("Ошибка", "Введите цену"); return; }
-            
-            string currency = "₽";
-            var currencyBox = this.FindControl<ComboBox>("CurrencyInput");
-            if (currencyBox?.SelectedIndex == 1) currency = "$";
-            else if (currencyBox?.SelectedIndex == 2) currency = "€";
-            
-            string payMethod = "card";
-            var payBox = this.FindControl<ComboBox>("PayMethodInput");
-            if (payBox?.SelectedIndex == 1) payMethod = "crypto";
-            else if (payBox?.SelectedIndex == 2) payMethod = "foreign_card";
-            
-            using var connection = new SqliteConnection("Data Source=mysubs.db");
-            connection.Open();
-            
-            if (_editSub != null)
-            {
-                new SqliteCommand($"UPDATE Subscriptions SET Title='{title}', Price={price}, PayMethod='{payMethod}', Currency='{currency}', Description='{description}', AutoRenew={(autoRenew ? 1 : 0)} WHERE Id={_editSub.Id}", connection).ExecuteNonQuery();
-            }
-            else
-            {
-                new SqliteCommand($"INSERT INTO Subscriptions (Title, Price, PayMethod, Currency, Description, AutoRenew, StartDate, EndDate, IsActive) VALUES ('{title}', {price}, '{payMethod}', '{currency}', '{description}', {(autoRenew ? 1 : 0)}, date('now'), date('now', '+1 month'), 1)", connection).ExecuteNonQuery();
-            }
-            Close();
+            ShowError("Введите название подписки!");  // Показывает ошибку
+            return;                                   // Выходит из метода (не сохраняет)
         }
-        catch (Exception ex) { await ShowMessage("Ошибка", ex.Message); }
+        
+        // Пытается преобразовать текст цены в число
+        // decimal.TryParse - пробует преобразовать строку в decimal
+        // priceText - входящая строка
+        // out decimal price - результат преобразования (если успешно)
+        // ! - отрицание (если НЕ удалось преобразовать)
+        if (!decimal.TryParse(priceText, out decimal price))
+        {
+            ShowError("Введите корректную стоимость!");  // Ошибка: не число
+            return;                                      // Выход
+        }
+        
+        // Проверяет, что цена больше 0
+        if (price <= 0)
+        {
+            ShowError("Стоимость должна быть больше 0!");
+            return;
+        }
+        
+        // Проверяет, что срок не пустой
+        if (string.IsNullOrWhiteSpace(term))
+        {
+            ShowError("Введите срок (День, Неделя, Месяц или Год)!");
+            return;
+        }
+        
+        // ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ - сохраняем подписку
+        
+        // Вызывает метод AddSubscription в главном окне
+        // _mainWindow - ссылка на главное окно
+        // .AddSubscription(name, price, term) - передает название, цену и срок
+        _mainWindow.AddSubscription(name, price, term);
+        
+        // Закрывает текущее окно (окно добавления подписки)
+        // Close() - закрывает окно
+        Close();
     }
     
-    private async Task ShowMessage(string title, string msg)
+    // Метод для показа сообщения об ошибке
+    // private - только внутри класса
+    // void - ничего не возвращает
+    // string message - текст ошибки, который нужно показать
+    private void ShowError(string message)
     {
-        var dlg = new Window { Title = title, Width = 300, Height = 120 };
-        var stack = new StackPanel();
-        stack.Children.Add(new TextBlock { Text = msg });
-        var ok = new Button { Content = "OK" };
-        ok.Click += (_, _) => dlg.Close();
-        stack.Children.Add(ok);
-        dlg.Content = stack;
-        await dlg.ShowDialog(this);
+        // Создает новое окно для сообщения
+        var dialog = new Window
+        {
+            Title = "Ошибка",              // Заголовок окна
+            Width = 250,                   // Ширина 250 пикселей
+            Height = 100,                  // Высота 100 пикселей
+            Content = new TextBlock        // Содержимое окна - текст
+            { 
+                Text = message,            // Текст ошибки
+                Margin = new Avalonia.Thickness(20)  // Отступы 20px со всех сторон
+            }
+        };
+        
+        // Показывает окно и ждет его закрытия
+        // dialog.ShowDialog(this) - показывает диалог поверх текущего окна
+        // this - текущее окно (владелец диалога)
+        dialog.ShowDialog(this);
+    }
+
+    // Обработчик нажатия на кнопку "Отмена"
+    private void CancelButton_Click(object? sender, RoutedEventArgs e)
+    {
+        Close();  // Просто закрывает окно без сохранения
     }
 }
