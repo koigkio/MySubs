@@ -14,7 +14,7 @@
                    HorizontalAlignment="Center"/>
 
         <!-- Добавляем блок с общей суммой -->
-        <Border Background="#FFEBEE" Padding="10,5" CornerRadius="8">
+        <Border Background="#FFEBEE" Padding="10,5" >
             <TextBlock Name="TxtTotalExpenses" 
                        Text="💰 Всего потрачено: 0 ₽" 
                        FontSize="14" 
@@ -23,7 +23,7 @@
                        HorizontalAlignment="Center"/>
         </Border>
         
-        <!-- Список расходов (как у вас) -->
+        <!-- Список расходов  -->
         <ListBox Name="ListExpenses" 
                  Height="300"
                  Background="White"
