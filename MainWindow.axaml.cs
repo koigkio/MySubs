@@ -3,6 +3,14 @@ using Avalonia.Interactivity;
 using System;
 using Avalonia.Media;
 using System.Timers;
+using System.Globalization;
+using System.Collections.Generic;
+using System.Data;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
+using ClosedXML.Excel;
+using Avalonia.Platform.Storage;
 
 namespace MySubs;
 
@@ -11,7 +19,7 @@ public partial class MainWindow : Window
     private decimal _balance = 0;
     private string _subs = "";
     private string _history = "";
-    private string _expenses = "";          // ← расходы
+    private string _expenses = "";
     private StackPanel? _subsPanel;
     private TextBlock? _txtCurrentBalance;
     private TextBox? _searchBox;
@@ -37,6 +45,12 @@ public partial class MainWindow : Window
 
         var showExpensesBtn = this.FindControl<Button>("ShowExpensesButton");
         if (showExpensesBtn != null) showExpensesBtn.Click += ShowExpenses_Click;
+
+        var showHistoryBtn = this.FindControl<Button>("ShowHistoryButton");
+        if (showHistoryBtn != null) showHistoryBtn.Click += ShowHistory_Click;
+
+        var exportBtn = this.FindControl<Button>("ExportToExcelButton");
+if (exportBtn != null) exportBtn.Click += ExportToExcel_Click;
 
         _db = new DatabaseHelper();
         LoadData();
@@ -71,7 +85,7 @@ public partial class MainWindow : Window
             if (p.Length >= 6)
             {
                 string name = p[0];
-                decimal price = decimal.Parse(p[1]);
+                decimal price = decimal.Parse(p[1], CultureInfo.InvariantCulture);
                 string term = p[2];
                 DateTime endDate, cancelTime;
                 if (!DateTime.TryParse(p[3], out endDate))
@@ -88,7 +102,7 @@ public partial class MainWindow : Window
                 }
                 if (!DateTime.TryParse(p[5], out cancelTime))
                     cancelTime = DateTime.MinValue;
-                newSubs += $"{name}|{price}|{term}|{endDate:o}|{p[4]}|{cancelTime:o};";
+                newSubs += $"{name}|{price.ToString(CultureInfo.InvariantCulture)}|{term}|{endDate:o}|{p[4]}|{cancelTime:o};";
             }
         }
         _subs = newSubs;
@@ -150,7 +164,7 @@ public partial class MainWindow : Window
             string name = p[0];
             if (!string.IsNullOrEmpty(searchText) && !name.ToLower().Contains(searchText.ToLower()))
                 continue;
-            decimal price = decimal.Parse(p[1]);
+            decimal price = decimal.Parse(p[1], CultureInfo.InvariantCulture);
             string term = p[2];
             DateTime end = DateTime.Parse(p[3]);
             bool active = p[4] == "True";
@@ -194,10 +208,7 @@ public partial class MainWindow : Window
             {
                 var restoreBtn = new Button { Content = "Восстановить", Width = 110, Background = new SolidColorBrush(Color.Parse("#27AE60")), Foreground = Brushes.White, BorderThickness = new Avalonia.Thickness(0), CornerRadius = new Avalonia.CornerRadius(6), Tag = subscriptionData, FontSize = 12 };
                 restoreBtn.Click += (s, e) => RestoreSubscriptionByData((string)((Button)s).Tag);
-                var deleteBtn = new Button { Content = "Удалить", Width = 110, Background = new SolidColorBrush(Color.Parse("#E74C3C")), Foreground = Brushes.White, BorderThickness = new Avalonia.Thickness(0), CornerRadius = new Avalonia.CornerRadius(6), Tag = subscriptionData, FontSize = 12 };
-                deleteBtn.Click += (s, e) => DeleteSubForeverByData((string)((Button)s).Tag);
                 btns.Children.Add(restoreBtn);
-                btns.Children.Add(deleteBtn);
             }
             stack.Children.Add(btns);
             border.Child = stack;
@@ -242,7 +253,7 @@ public partial class MainWindow : Window
     public void AddExpense(string name, decimal amount, string term, string category)
     {
         string date = DateTime.Now.ToString("dd.MM.yyyy HH:mm");
-        _expenses += $"{date}|{name}|{amount}|{term}|{category};";
+        _expenses += $"{date}|{name}|{amount.ToString(CultureInfo.InvariantCulture)}|{term}|{category};";
         SaveAllData();
     }
     // ============================================
@@ -265,7 +276,7 @@ public partial class MainWindow : Window
             end = DateTime.Now.AddYears(1);
         else
             end = DateTime.Now.AddMonths(1);
-        _subs += $"{name}|{price}|{term}|{end:o}|True|{DateTime.MinValue:o};";
+        _subs += $"{name}|{price.ToString(CultureInfo.InvariantCulture)}|{term}|{end:o}|True|{DateTime.MinValue:o};";
         AddExpense(name, price, term, "Подписка");
         RefreshSubs();
         SaveAllData();
@@ -276,7 +287,7 @@ public partial class MainWindow : Window
     {
         _balance += amount;
         UpdateBalanceDisplay();
-        _history += $"{DateTime.Now:dd.MM.yyyy HH:mm}|{amount:F2}|{method}|{currency};";
+        _history += $"{DateTime.Now:dd.MM.yyyy HH:mm}|{amount.ToString("F2", CultureInfo.InvariantCulture)}|{method}|{currency};";
         SaveAllData();
         ShowMsg($"Баланс пополнен на {amount} {currency}!");
     }
@@ -291,7 +302,7 @@ public partial class MainWindow : Window
                 string[] p = subscriptionData.Split('|');
                 string name = p[0];
                 bool active = p[4] == "True";
-                decimal price = decimal.Parse(p[1]);
+                decimal price = decimal.Parse(p[1], CultureInfo.InvariantCulture);
                 string term = p[2];
                 DateTime end = DateTime.Parse(p[3]);
                 if (!active) { ShowMsg("Нельзя продлить отмененную подписку"); return; }
@@ -304,7 +315,7 @@ public partial class MainWindow : Window
                 else if (termLower == "месяц" || termLower == "1 месяц" || termLower == "month") end = end.AddMonths(1);
                 else if (termLower == "год" || termLower == "1 год" || termLower == "year") end = end.AddYears(1);
                 else end = end.AddMonths(1);
-                items[i] = $"{name}|{price}|{term}|{end:o}|True|{p[5]}";
+                items[i] = $"{name}|{price.ToString(CultureInfo.InvariantCulture)}|{term}|{end:o}|True|{p[5]}";
                 _subs = string.Join(";", items) + ";";
                 AddExpense(name, price, term, "Продление");
                 RefreshSubs();
@@ -324,10 +335,10 @@ public partial class MainWindow : Window
             {
                 string[] p = subscriptionData.Split('|');
                 string name = p[0];
-                decimal price = decimal.Parse(p[1]);
+                decimal price = decimal.Parse(p[1], CultureInfo.InvariantCulture);
                 string term = p[2];
                 DateTime endDate = DateTime.Parse(p[3]);
-                items[i] = $"{name}|{price}|{term}|{endDate:o}|False|{DateTime.Now:o}";
+                items[i] = $"{name}|{price.ToString(CultureInfo.InvariantCulture)}|{term}|{endDate:o}|False|{DateTime.Now:o}";
                 _subs = string.Join(";", items) + ";";
                 RefreshSubs();
                 SaveAllData();
@@ -346,11 +357,11 @@ public partial class MainWindow : Window
             {
                 string[] p = subscriptionData.Split('|');
                 string name = p[0];
-                decimal price = decimal.Parse(p[1]);
+                decimal price = decimal.Parse(p[1], CultureInfo.InvariantCulture);
                 string term = p[2];
                 DateTime endDate = DateTime.Parse(p[3]);
                 if (endDate < DateTime.Now) { ShowMsg("Нельзя восстановить истекшую подписку!"); return; }
-                items[i] = $"{name}|{price}|{term}|{endDate:o}|True|{DateTime.MinValue:o}";
+                items[i] = $"{name}|{price.ToString(CultureInfo.InvariantCulture)}|{term}|{endDate:o}|True|{DateTime.MinValue:o}";
                 _subs = string.Join(";", items) + ";";
                 RefreshSubs();
                 SaveAllData();
@@ -360,29 +371,162 @@ public partial class MainWindow : Window
         }
     }
 
-    public void DeleteSubForeverByData(string subscriptionData)
+
+// ========== МЕТОД ЭКСПОРТА (ВСТАВЬТЕ ЭТОТ БЛОК ВНУТРЬ КЛАССА MainWindow) ==========
+
+
+// ========== ЭКСПОРТ В EXCEL ==========
+private async void ExportToExcel_Click(object? sender, RoutedEventArgs e)
+{
+    var dtSubscriptions = BuildSubscriptionsDataTable();
+    var dtExpenses = BuildExpensesDataTable();
+    var dtHistory = BuildHistoryDataTable();
+
+    if (dtSubscriptions.Rows.Count == 0 && dtExpenses.Rows.Count == 0 && dtHistory.Rows.Count == 0)
     {
-        string[] items = _subs.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-        string name = "";
-        for (int i = 0; i < items.Length; i++)
-        {
-            if (items[i] == subscriptionData)
-            {
-                string[] p = subscriptionData.Split('|');
-                name = p[0];
-                var list = new System.Collections.Generic.List<string>(items);
-                list.RemoveAt(i);
-                items = list.ToArray();
-                break;
-            }
-        }
-        _subs = string.Join(";", items);
-        if (!string.IsNullOrEmpty(_subs) && !_subs.EndsWith(";")) _subs += ";";
-        RefreshSubs();
-        SaveAllData();
-        ShowMsg($"❌ Подписка {name} удалена навсегда");
+        await ShowMessageAsync("Нет данных для экспорта.");
+        return;
     }
 
+    var topLevel = TopLevel.GetTopLevel(this);
+    if (topLevel == null) return;
+
+    var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+    {
+        Title = "Сохранить отчёт Excel",
+        SuggestedFileName = $"Отчёт_от_{DateTime.Now:yyyy-MM-dd_HH-mm}.xlsx",
+        DefaultExtension = "xlsx",
+        FileTypeChoices = new[] { new FilePickerFileType("Excel Workbook") { Patterns = new[] { "*.xlsx" } } }
+    });
+
+    if (file == null) return;
+
+    try
+    {
+        using (var workbook = new XLWorkbook())
+        {
+            if (dtSubscriptions.Rows.Count > 0)
+                workbook.Worksheets.Add(dtSubscriptions, "Подписки");
+            if (dtExpenses.Rows.Count > 0)
+                workbook.Worksheets.Add(dtExpenses, "Расходы");
+            if (dtHistory.Rows.Count > 0)
+                workbook.Worksheets.Add(dtHistory, "Пополнения");
+
+            foreach (var ws in workbook.Worksheets)
+                ws.Columns().AdjustToContents();
+
+            await using var stream = await file.OpenWriteAsync();
+            workbook.SaveAs(stream);
+        }
+        await ShowMessageAsync($"✅ Данные сохранены:\n{file.Path.LocalPath}");
+    }
+    catch (Exception ex)
+    {
+        await ShowMessageAsync($"❌ Ошибка: {ex.Message}");
+    }
+}
+
+private DataTable BuildSubscriptionsDataTable()
+{
+    var dt = new DataTable();
+    dt.Columns.Add("Название", typeof(string));
+    dt.Columns.Add("Цена", typeof(decimal));
+    dt.Columns.Add("Срок", typeof(string));
+    dt.Columns.Add("Дата окончания", typeof(DateTime));
+    dt.Columns.Add("Активна", typeof(string));
+    dt.Columns.Add("Отменена", typeof(string));
+
+    var items = _subs.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+    foreach (var item in items)
+    {
+        var parts = item.Split('|');
+        if (parts.Length >= 6)
+        {
+            bool isActive = parts[4] == "True";
+            bool isCanceled = parts[5] != DateTime.MinValue.ToString("o");
+
+            var row = dt.NewRow();
+            row[0] = parts[0];
+            row[1] = decimal.Parse(parts[1], CultureInfo.InvariantCulture);
+            row[2] = parts[2];
+            row[3] = DateTime.Parse(parts[3]);
+            row[4] = isActive ? "Да" : "Нет";
+            row[5] = isCanceled ? "Да" : "Нет";
+            dt.Rows.Add(row);
+        }
+    }
+    return dt;
+}
+
+private DataTable BuildExpensesDataTable()
+{
+    var dt = new DataTable();
+    dt.Columns.Add("Дата", typeof(DateTime));
+    dt.Columns.Add("Название", typeof(string));
+    dt.Columns.Add("Сумма", typeof(decimal));
+    dt.Columns.Add("Срок", typeof(string));
+    dt.Columns.Add("Категория", typeof(string));
+
+    var items = _expenses.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+    foreach (var item in items)
+    {
+        var parts = item.Split('|');
+        if (parts.Length >= 5)
+        {
+            var row = dt.NewRow();
+            row[0] = DateTime.ParseExact(parts[0], "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture);
+            row[1] = parts[1];
+            row[2] = decimal.Parse(parts[2], CultureInfo.InvariantCulture);
+            row[3] = parts[3];
+            row[4] = parts[4];
+            dt.Rows.Add(row);
+        }
+    }
+    return dt;
+}
+
+private DataTable BuildHistoryDataTable()
+{
+    var dt = new DataTable();
+    dt.Columns.Add("Дата", typeof(DateTime));
+    dt.Columns.Add("Сумма", typeof(decimal));
+    dt.Columns.Add("Способ оплаты", typeof(string));
+    dt.Columns.Add("Валюта", typeof(string));
+
+    var items = _history.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+    foreach (var item in items)
+    {
+        var parts = item.Split('|');
+        if (parts.Length >= 4)
+        {
+            var row = dt.NewRow();
+            row[0] = DateTime.ParseExact(parts[0], "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture);
+            row[1] = decimal.Parse(parts[1], CultureInfo.InvariantCulture);
+            row[2] = parts[2];
+            row[3] = parts[3];
+            dt.Rows.Add(row);
+        }
+    }
+    return dt;
+}
+
+private async Task ShowMessageAsync(string message)
+{
+    var dialog = new Window
+    {
+        Title = "Информация",
+        Width = 350,
+        Height = 150,
+        Content = new TextBlock
+        {
+            Text = message,
+            Margin = new Avalonia.Thickness(20),
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+        },
+        WindowStartupLocation = WindowStartupLocation.CenterOwner
+    };
+    await dialog.ShowDialog(this);
+}
     // ========== ОБРАБОТЧИКИ КНОПОК ==========
     public async void AddButton_Click(object? s, RoutedEventArgs e)
         => await new AddSubscriptionWindow(this).ShowDialog(this);
@@ -393,5 +537,10 @@ public partial class MainWindow : Window
     public async void ShowExpenses_Click(object? s, RoutedEventArgs e)
         => await new AddExpensesWindow(this).ShowDialog(this);
 
+    public async void ShowHistory_Click(object? s, RoutedEventArgs e)
+        => await new AddHistoryWindow(this).ShowDialog(this);
+        
+
     public string GetSubscriptions() => _subs;
+    public string GetHistory() => _history;
 }
