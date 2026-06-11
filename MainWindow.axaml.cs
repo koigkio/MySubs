@@ -372,7 +372,6 @@ if (exportBtn != null) exportBtn.Click += ExportToExcel_Click;
     }
 
 
-// ========== МЕТОД ЭКСПОРТА (ВСТАВЬТЕ ЭТОТ БЛОК ВНУТРЬ КЛАССА MainWindow) ==========
 
 
 // ========== ЭКСПОРТ В EXCEL ==========
